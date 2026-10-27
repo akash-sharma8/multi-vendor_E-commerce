@@ -1,0 +1,176 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  CUSTOMER
+  VENDOR
+  ADMIN
+}
+
+enum VendorStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  SUSPENDED
+}
+
+enum OrderItemStatus {
+  PLACED
+  PACKED
+  SHIPPED
+  DELIVERED
+  CANCELLED
+}
+
+enum PaymentStatus {
+  CREATED
+  PAID
+  FAILED
+  REFUNDED
+}
+
+model User {
+  id           Int            @id @default(autoincrement())
+  name         String
+  email        String         @unique
+  passwordHash String
+  role         Role           @default(CUSTOMER)
+  createdAt    DateTime       @default(now())
+  vendor       VendorProfile?
+  orders       Order[]
+  reviews      Review[]
+}
+
+model VendorProfile {
+  id                Int          @id @default(autoincrement())
+  userId            Int          @unique
+  user              User         @relation(fields: [userId], references: [id])
+  storeName         String
+  description       String?
+  status            VendorStatus @default(PENDING)
+  commissionPercent Int          @default(10)
+  razorpayAccountId String?
+  createdAt         DateTime     @default(now())
+  products          Product[]
+  orderItems        OrderItem[]
+  payouts           Payout[]
+}
+
+model Category {
+  id       Int       @id @default(autoincrement())
+  name     String    @unique
+  products Product[]
+}
+
+// All money is stored in paise (integer) to avoid float rounding bugs.
+model Product {
+  id          Int            @id @default(autoincrement())
+  vendorId    Int
+  vendor      VendorProfile  @relation(fields: [vendorId], references: [id])
+  categoryId  Int?
+  category    Category?      @relation(fields: [categoryId], references: [id])
+  title       String
+  description String
+  pricePaise  Int
+  stock       Int            @default(0)
+  isActive    Boolean        @default(true)
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  images      ProductImage[]
+  reviews     Review[]
+  orderItems  OrderItem[]
+
+  @@index([vendorId])
+}
+
+model ProductImage {
+  id        Int     @id @default(autoincrement())
+  productId Int
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  url       String
+}
+
+model Coupon {
+  id              Int       @id @default(autoincrement())
+  code            String    @unique
+  discountPercent Int
+  maxUses         Int       @default(100)
+  usedCount       Int       @default(0)
+  expiresAt       DateTime?
+  isActive        Boolean   @default(true)
+  orders          Order[]
+}
+
+model Order {
+  id            Int           @id @default(autoincrement())
+  customerId    Int
+  customer      User          @relation(fields: [customerId], references: [id])
+  couponId      Int?
+  coupon        Coupon?       @relation(fields: [couponId], references: [id])
+  subtotalPaise Int
+  discountPaise Int           @default(0)
+  totalPaise    Int
+  paymentStatus PaymentStatus @default(CREATED)
+  address       String
+  createdAt     DateTime      @default(now())
+  items         OrderItem[]
+  payment       Payment?
+}
+
+// Status lives here, not on Order, because each vendor
+// packs and ships their own items independently.
+model OrderItem {
+  id               Int             @id @default(autoincrement())
+  orderId          Int
+  order            Order           @relation(fields: [orderId], references: [id])
+  productId        Int
+  product          Product         @relation(fields: [productId], references: [id])
+  vendorId         Int
+  vendor           VendorProfile   @relation(fields: [vendorId], references: [id])
+  quantity         Int
+  unitPricePaise   Int             // snapshot of price at purchase time
+  commissionPaise  Int             // platform's cut, snapshot
+  vendorEarnPaise  Int
+  status           OrderItemStatus @default(PLACED)
+
+  @@index([vendorId])
+}
+
+model Payment {
+  id                Int           @id @default(autoincrement())
+  orderId           Int           @unique
+  order             Order         @relation(fields: [orderId], references: [id])
+  razorpayOrderId   String        @unique
+  razorpayPaymentId String?
+  status            PaymentStatus @default(CREATED)
+  amountPaise       Int
+  createdAt         DateTime      @default(now())
+}
+
+model Payout {
+  id          Int           @id @default(autoincrement())
+  vendorId    Int
+  vendor      VendorProfile @relation(fields: [vendorId], references: [id])
+  amountPaise Int
+  razorpayTransferId String?
+  createdAt   DateTime      @default(now())
+}
+
+model Review {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id])
+  productId Int
+  product   Product  @relation(fields: [productId], references: [id])
+  rating    Int
+  comment   String?
+  createdAt DateTime @default(now())
+
+  @@unique([userId, productId]) // one review per user per product
+}
