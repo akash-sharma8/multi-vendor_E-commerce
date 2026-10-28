@@ -2,8 +2,10 @@ import prisma from '../../config/db.js';
 import AppError from '../../utils/AppError.js';
 import * as cartService from '../cart/cart.service.js';
 import { syncProduct } from '../search/search.service.js';
+import * as couponService from '../coupons/coupon.service.js';
 
-export async function checkout(userId, { address }) {
+
+export async function checkout(userId, { address, couponCode }) {
   const { items, subtotalPaise } = await cartService.getCart(userId);
   if (!items.length) throw new AppError('Your cart is empty', 400);
 
@@ -18,12 +20,20 @@ export async function checkout(userId, { address }) {
       }
     }
 
+    let couponId = null;
+    let discountPaise = 0;
+    if (couponCode) {
+      ({ couponId, discountPaise } = await couponService.claim(tx, couponCode, subtotalPaise));
+    }
+
     return tx.order.create({
       data: {
         customerId: userId,
+        couponId,
         address,
         subtotalPaise,
-        totalPaise: subtotalPaise,
+        discountPaise,
+        totalPaise: subtotalPaise - discountPaise,
         items: {
           create: items.map((item) => {
             const commissionPaise = Math.round(
@@ -48,6 +58,7 @@ export async function checkout(userId, { address }) {
   for (const item of items) await syncProduct(item.productId); // stock changed
   return order;
 }
+
 
 export async function listMine(userId) {
   return prisma.order.findMany({

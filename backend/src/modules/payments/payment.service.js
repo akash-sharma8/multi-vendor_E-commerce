@@ -99,9 +99,12 @@ export async function verify(userId, body) {
 
 // Customer gives up before paying: cancel the order and put the stock back.
 export async function cancelUnpaid(userId, orderId) {
-  const items = await prisma.orderItem.findMany({
-    where: { orderId, order: { customerId: userId } },
+  const order = await prisma.order.findFirst({
+    where: { id: orderId, customerId: userId },
+    include: { items: true },
   });
+  if (!order) throw new AppError('Order not found', 404);
+  const items = order.items;
 
   await prisma.$transaction(async (tx) => {
     const claimed = await tx.order.updateMany({
@@ -117,6 +120,13 @@ export async function cancelUnpaid(userId, orderId) {
       });
     }
     await tx.orderItem.updateMany({ where: { orderId }, data: { status: 'CANCELLED' } });
+
+    if (order.couponId) {
+      await tx.coupon.update({
+        where: { id: order.couponId },
+        data: { usedCount: { decrement: 1 } },
+      });
+    }
   });
 
   for (const item of items) await syncProduct(item.productId);

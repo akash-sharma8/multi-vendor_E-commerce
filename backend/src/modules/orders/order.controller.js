@@ -4,6 +4,7 @@ import * as orderService from './order.service.js';
 
 export const checkoutSchema = z.object({
   address: z.string().trim().min(10, 'please enter a full address').max(300),
+  couponCode: z.string().trim().min(1).max(20).optional(),
 });
 
 export const statusSchema = z.object({

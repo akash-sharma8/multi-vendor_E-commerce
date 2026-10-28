@@ -13,6 +13,10 @@ import orderRoutes from './modules/orders/order.routes.js';
 import paymentRoutes from './modules/payments/payment.routes.js';
 import { webhook } from './modules/payments/payment.controller.js';
 import asyncHandler from './utils/asyncHandler.js';
+import adminRoutes from './modules/admin/admin.routes.js';
+import reviewRoutes from './modules/reviews/review.routes.js';
+import couponRoutes from './modules/coupons/coupon.routes.js';
+
 
 const app = express();
 
@@ -40,6 +44,10 @@ app.use('/api/search', searchRoutes);
 app.use('/api/cart', cartRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/payments', paymentRoutes);
+app.use('/api/admin', adminRoutes);
+app.use('/api/products', reviewRoutes);
+app.use('/api/coupons', couponRoutes);
+
 app.use(errorHandler); // must stay last
 
 export default app;
