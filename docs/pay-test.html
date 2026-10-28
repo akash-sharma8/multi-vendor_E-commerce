@@ -1,0 +1,38 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Pay test</title>
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<h3>Payment test</h3>
+<input id="token" placeholder="customer token" size="70"><br><br>
+<input id="orderId" placeholder="order id">
+<button onclick="pay()">Pay</button>
+<pre id="out"></pre>
+<script>
+const API = 'http://localhost:5000/api';
+
+async function call(path, body) {
+  const r = await fetch(API + path, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token.value.trim() },
+    body: JSON.stringify(body),
+  });
+  return { status: r.status, data: await r.json() };
+}
+
+async function pay() {
+  const c = await call('/payments/create', { orderId: Number(orderId.value) });
+  if (c.status !== 200) { out.textContent = JSON.stringify(c, null, 2); return; }
+
+  new Razorpay({
+    key: c.data.keyId,
+    order_id: c.data.razorpayOrderId,
+    amount: c.data.amountPaise,
+    currency: 'INR',
+    name: 'Marketplace test',
+    handler: async (response) => {
+      const v = await call('/payments/verify', response);
+      out.textContent = JSON.stringify(v, null, 2);
+    },
+  }).open();
+}
+</script>

@@ -10,10 +10,21 @@ import searchRoutes from './modules/search/search.routes.js';
 import cartRoutes from './modules/cart/cart.routes.js';
 import orderRoutes from './modules/orders/order.routes.js';
 
+import paymentRoutes from './modules/payments/payment.routes.js';
+import { webhook } from './modules/payments/payment.controller.js';
+import asyncHandler from './utils/asyncHandler.js';
+
 const app = express();
 
 app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
 app.use(cors());
+
+app.post(
+  '/api/payments/webhook',
+  express.raw({ type: 'application/json' }),
+  asyncHandler(webhook)
+);
+
 app.use(express.json());
 app.use('/uploads', express.static('uploads'));
 app.use(morgan('dev'));
@@ -28,6 +39,7 @@ app.use('/api/products', productRoutes);
 app.use('/api/search', searchRoutes);
 app.use('/api/cart', cartRoutes);
 app.use('/api/orders', orderRoutes);
+app.use('/api/payments', paymentRoutes);
 app.use(errorHandler); // must stay last
 
 export default app;

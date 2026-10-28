@@ -75,7 +75,7 @@ export async function getMine(userId, orderId) {
 
 export async function listForVendor(vendorId) {
   return prisma.orderItem.findMany({
-    where: { vendorId },
+    where: { vendorId, order: { paymentStatus: 'PAID' } },
     include: {
       product: { select: { title: true } },
       order: { select: { address: true, createdAt: true } },
@@ -83,7 +83,6 @@ export async function listForVendor(vendorId) {
     orderBy: { id: 'desc' },
   });
 }
-
 // what a vendor may do next, from each status
 const NEXT = {
   PLACED: ['PACKED', 'CANCELLED'],
@@ -94,7 +93,9 @@ const NEXT = {
 };
 
 export async function updateItemStatus(itemId, vendorId, newStatus) {
-  const item = await prisma.orderItem.findFirst({ where: { id: itemId, vendorId } });
+  const item = await prisma.orderItem.findFirst({
+    where: { id: itemId, vendorId, order: { paymentStatus: 'PAID' } },
+  });
   if (!item) throw new AppError('Order item not found', 404);
 
   if (!NEXT[item.status].includes(newStatus)) {
