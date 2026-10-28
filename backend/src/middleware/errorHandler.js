@@ -1,7 +1,15 @@
 export default function errorHandler(err, req, res, next) {
-  const status = err.statusCode || 500;
-  if (status === 500) console.error(err);
-  res.status(status).json({
-    error: status === 500 ? 'Something went wrong' : err.message,
-  });
+  let status = err.statusCode || 500;
+  let message = err.message;
+
+  if (err.name === 'MulterError') {
+    status = 400;
+    message = err.code === 'LIMIT_FILE_SIZE' ? 'Image too large (max 3 MB)' : err.message;
+  }
+
+  if (status === 500) {
+    console.error(err);
+    message = 'Something went wrong';
+  }
+  res.status(status).json({ error: message });
 }
