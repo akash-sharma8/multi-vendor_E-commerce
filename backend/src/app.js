@@ -6,6 +6,7 @@ import authRoutes from './modules/auth/auth.routes.js';
 import vendorRoutes from './modules/vendors/vendor.routes.js';
 import productRoutes from './modules/products/product.routes.js';
 import errorHandler from './middleware/errorHandler.js';
+import searchRoutes from './modules/search/search.routes.js';
 
 const app = express();
 
@@ -22,7 +23,7 @@ app.get('/api/health', (req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/vendors', vendorRoutes);
 app.use('/api/products', productRoutes);
-
+app.use('/api/search', searchRoutes);
 app.use(errorHandler); // must stay last
 
 export default app;

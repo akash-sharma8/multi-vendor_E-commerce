@@ -1,12 +1,15 @@
 import prisma from '../../config/db.js';
 import AppError from '../../utils/AppError.js';
 import uploadToS3 from '../../utils/uploadToS3.js';
+import { syncProduct } from '../search/search.service.js';
 
 export async function create(vendorId, data) {
-  return prisma.product.create({
+  const product = await prisma.product.create({
     data: { ...data, vendorId },
     include: { images: true },
   });
+  await syncProduct(product.id);
+  return product;
 }
 
 export async function listMine(vendorId) {
@@ -38,13 +41,20 @@ async function findOwned(id, vendorId) {
 
 export async function update(id, vendorId, data) {
   await findOwned(id, vendorId);
-  return prisma.product.update({ where: { id }, data, include: { images: true } });
+  const product = await prisma.product.update({
+    where: { id },
+    data,
+    include: { images: true },
+  });
+  await syncProduct(id);
+  return product;
 }
 
 // soft delete: old orders still point at this product
 export async function remove(id, vendorId) {
   await findOwned(id, vendorId);
   await prisma.product.update({ where: { id }, data: { isActive: false } });
+  await syncProduct(id); // removes it from the search index
 }
 
 export async function addImages(id, vendorId, files) {
@@ -55,5 +65,6 @@ export async function addImages(id, vendorId, files) {
   await prisma.productImage.createMany({
     data: urls.map((url) => ({ productId: id, url })),
   });
+  await syncProduct(id);
   return prisma.productImage.findMany({ where: { productId: id } });
 }

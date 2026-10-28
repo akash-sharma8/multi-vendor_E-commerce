@@ -6,19 +6,21 @@
   "scripts": {
     "dev": "nodemon src/server.js",
     "start": "node src/server.js",
+    "reindex": "node scripts/reindex.js",
     "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "type": "module",
+  
   "prisma": {
     "seed": "node prisma/seed.js"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1157.0",
     "@aws-sdk/s3-request-presigner": "^3.1157.0",
-    "@elastic/elasticsearch": "^9.5.1",
+    "@elastic/elasticsearch": "8.13",
     "@prisma/client": "^6.19.3",
     "bcrypt": "^6.0.0",
     "cors": "^2.8.6",
