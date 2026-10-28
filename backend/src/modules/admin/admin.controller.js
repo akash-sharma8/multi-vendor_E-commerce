@@ -28,3 +28,6 @@ export async function listVendors(req, res) {
 export async function updateVendor(req, res) {
   res.json(await adminService.updateVendor(parseId(req.params.id), req.body));
 }
+export async function analytics(req, res) {
+  res.json(await adminService.analytics());
+}

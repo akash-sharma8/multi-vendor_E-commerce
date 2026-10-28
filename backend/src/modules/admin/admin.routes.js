@@ -11,5 +11,6 @@ router.use(requireAuth, requireRole('ADMIN'));
 
 router.get('/vendors', asyncHandler(ctrl.listVendors));
 router.patch('/vendors/:id', validate(ctrl.vendorUpdateSchema), asyncHandler(ctrl.updateVendor));
+router.get('/analytics', asyncHandler(ctrl.analytics));
 
 export default router;
