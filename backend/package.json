@@ -6,15 +6,14 @@
   "scripts": {
     "dev": "nodemon src/server.js",
     "start": "node src/server.js",
-    "reindex": "node scripts/reindex.js",
-    "setup-test-users": "node scripts/setup-test-users.js",
-    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js"
+    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js --runInBand --forceExit",
+    "test:coverage": "node --experimental-vm-modules node_modules/jest/bin/jest.js --runInBand --forceExit --coverage",
+    "reindex": "node scripts/reindex.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "type": "module",
-  
   "prisma": {
     "seed": "node prisma/seed.js"
   },
@@ -38,6 +37,7 @@
     "zod": "^4.6.7"
   },
   "devDependencies": {
+    "autocannon": "^8.0.0",
     "jest": "^30.5.2",
     "nodemon": "^3.1.14",
     "supertest": "^7.3.1"

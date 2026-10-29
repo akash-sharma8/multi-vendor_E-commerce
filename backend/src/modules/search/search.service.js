@@ -56,7 +56,7 @@ export async function syncProduct(id) {
     });
 
     if (!p || !p.isActive) {
-      await es.delete({ index: INDEX, id: String(id) }, { ignore: [404] });
+            await es.delete({ index: INDEX, id: String(id), refresh: true }, { ignore: [404] });
       return;
     }
     await es.index({ index: INDEX, id: String(id), document: toDoc(p), refresh: true });
